@@ -1,0 +1,23 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>مدیریت Mihan1</title><link rel="stylesheet" href="/style.css"></head><body>
+<header><b>Mihan<span>1</span> · مدیریت</b><a href="/">سایت</a></header><main>
+<section id=login class=panel><h1>ورود ادمین</h1><input id=user placeholder="نام کاربری"><input id=pass type=password placeholder="رمز ادمین"><button onclick=login()>ورود</button><p><a href="/owner.html">ورود مالک سایت</a></p><p id=err></p></section>
+<section id=app class="panel hidden"><div class=row><h1>انتشار محتوا</h1><button class=secondary onclick=logout()>خروج</button></div>
+<label>نوع محتوا</label><select id=type onchange=toggle()><option value=text>متن</option><option value=image>عکس</option><option value=video>ویدیو</option></select>
+<label>عنوان</label><input id=title placeholder="عنوان">
+<label>متن</label><textarea id=text placeholder="متن اختیاری"></textarea>
+<div id=filebox class=hidden><label>انتخاب فایل از گوشی یا کامپیوتر</label><input id=file type=file accept="image/*,video/*"><div id=preview></div></div>
+<button onclick=publish()>انتشار</button><p id=msg></p><hr><h2>مطالب</h2><div id=list></div></section></main>
+<script>
+const $=x=>document.querySelector(x),E=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+async function check(){let r=await fetch("/api/auth"),x=await r.json();x.authenticated?show():loginView()}
+function show(){$("#login").classList.add("hidden");$("#app").classList.remove("hidden");toggle();load()}
+function loginView(){$("#login").classList.remove("hidden");$("#app").classList.add("hidden")}
+async function login(){let r=await fetch("/api/auth",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"admin-login",username:$("#user").value,password:$("#pass").value})});if(r.ok)show();else $("#err").textContent="رمز نادرست است."}
+async function logout(){await fetch("/api/auth",{method:"DELETE"});loginView()}
+function toggle(){$("#filebox").classList.toggle("hidden",$("#type").value==="text")}
+$("#file")?.addEventListener("change",()=>{let f=$("#file").files[0];$("#preview").textContent=f?`فایل انتخاب شد: ${f.name} — ${(f.size/1048576).toFixed(1)} MB`:""})
+function readFile(f){return new Promise((res,rej)=>{let r=new FileReader;r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f)})}
+async function publish(){let type=$("#type").value,title=$("#title").value.trim(),text=$("#text").value;if(!title)return $("#msg").textContent="عنوان را وارد کنید.";let body={type,title,text};if(type!=="text"){let f=$("#file").files[0];if(!f)return $("#msg").textContent="یک فایل انتخاب کنید.";if(f.size>10*1024*1024)return $("#msg").textContent="حداکثر حجم فایل 10MB است.";if(type==="image"&&!f.type.startsWith("image/"))return $("#msg").textContent="لطفاً عکس انتخاب کنید.";if(type==="video"&&!f.type.startsWith("video/"))return $("#msg").textContent="لطفاً ویدیو انتخاب کنید.";body.mime=f.type;body.data=await readFile(f)}$("#msg").textContent="در حال آپلود...";let r=await fetch("/api/posts",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});let x=await r.json().catch(()=>({}));if(r.ok){$("#msg").textContent="با موفقیت منتشر شد.";$("#title").value="";$("#text").value="";$("#file").value="";$("#preview").textContent="";load()}else $("#msg").textContent=x.error||"خطا در آپلود"}
+async function load(){let a=await (await fetch("/api/posts")).json();$("#list").innerHTML=a.length?a.map(p=>`<div class=item><div><b>${E(p.title)}</b><small>${new Date(p.createdAt).toLocaleString("fa-IR")}</small></div><button class=danger onclick="del('${p.id}')">حذف</button></div>`).join(""):"هنوز مطلبی نیست."}
+async function del(id){if(!confirm("حذف شود؟"))return;await fetch("/api/posts",{method:"DELETE",headers:{"content-type":"application/json"},body:JSON.stringify({id})});load()}check();
+</script></body></html>

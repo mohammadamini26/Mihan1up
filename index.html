@@ -1,0 +1,6 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mihan1</title><link rel="stylesheet" href="/style.css"></head><body>
+<header><b>Mihan<span>1</span></b><a href="/admin.html">پنل ادمین</a></header><main><section class="hero"><h1>Mihan1</h1><p>عکس‌ها، ویدیوها و نوشته‌های منتشرشده</p></section><section id="posts" class="grid">در حال بارگذاری...</section></main>
+<script>
+const E=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+async function load(){let r=await fetch("/api/posts"),a=await r.json(),el=document.querySelector("#posts");if(!a.length){el.innerHTML="<div class=empty>هنوز محتوایی منتشر نشده است.</div>";return}el.innerHTML=a.map(p=>`<article class=card>${p.type==="image"?`<img src="${E(p.url)}">`:""}${p.type==="video"?`<video controls playsinline preload=metadata src="${E(p.url)}"></video>`:""}<div class=pad><h2>${E(p.title)}</h2><p>${E(p.text).replace(/\n/g,"<br>")}</p><small>${new Date(p.createdAt).toLocaleString("fa-IR")}</small></div></article>`).join("")}load();
+</script></body></html>

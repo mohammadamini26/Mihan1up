@@ -1,0 +1,18 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>مدیریت مالک — Mihan1</title><link rel="stylesheet" href="/style.css"></head><body>
+<header><b>Mihan<span>1</span> · مالک سایت</b><a href="/">سایت</a></header><main>
+<section id="login" class="panel"><h1>ورود مالک سایت</h1><p>این بخش فقط برای صاحب سایت است.</p><input id="pass" type="password" placeholder="رمز مالک"><button onclick="login()">ورود</button><p id="err"></p></section>
+<section id="app" class="panel hidden"><div class="row"><h1>مدیریت ادمین‌ها</h1><button class="secondary" onclick="logout()">خروج</button></div>
+<p>از اینجا می‌توانید ادمین‌های سایت را اضافه، غیرفعال یا حذف کنید. ادمین‌ها فقط اجازه انتشار و حذف محتوا دارند و به این بخش دسترسی ندارند.</p>
+<label>نام کاربری ادمین جدید</label><input id="u" placeholder="مثلاً admin1"><label>رمز ادمین</label><input id="p" type="password" placeholder="رمز"><button onclick="add()">افزودن ادمین</button><p id="msg"></p><hr><div id="list"></div></section></main>
+<script>
+const $=x=>document.querySelector(x),E=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+async function check(){let x=await(await fetch("/api/auth")).json();x.authenticated&&x.role==="owner"?show():null}
+function show(){$("#login").classList.add("hidden");$("#app").classList.remove("hidden");load()}
+async function login(){let r=await fetch("/api/auth",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"owner-login",password:$("#pass").value})});if(r.ok)show();else $("#err").textContent="رمز مالک نادرست است."}
+async function logout(){await fetch("/api/auth",{method:"DELETE"});location.reload()}
+async function add(){let r=await fetch("/api/auth",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"add-admin",username:$("#u").value,password:$("#p").value})});$("#msg").textContent=r.ok?"ادمین اضافه شد.":"خطا در افزودن ادمین";if(r.ok){$("#u").value="";$("#p").value="";load()}}
+async function load(){let a=await(await fetch("/api/auth",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"list-admins"})})).json();$("#list").innerHTML=a.length?a.map(x=>`<div class=item><div><b>${E(x.username)}</b><small>${x.enabled===false?"غیرفعال":"فعال"}</small></div><div><button class=secondary onclick="toggle('${E(x.username)}',${x.enabled===false})">${x.enabled===false?"فعال‌سازی":"غیرفعال‌کردن"}</button><button class=danger onclick="removeA('${E(x.username)}')">حذف</button></div></div>`).join(""):"هنوز ادمینی اضافه نشده است."}
+async function toggle(username,enabled){await fetch("/api/auth",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"toggle-admin",username,enabled})});load()}
+async function removeA(username){if(!confirm("این ادمین حذف شود؟"))return;await fetch("/api/auth",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"remove-admin",username})});load()}
+check();
+</script></body></html>
